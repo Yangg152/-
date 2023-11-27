@@ -1,8 +1,5 @@
-include $(NVBOARD_HOME)/scripts/nvboard.mk
-
 all:
 	@echo "Write this Makefile by your self."
-
 	
 TOPNAME = top
 NXDC_FILES = constr/top.nxdc
@@ -37,7 +34,7 @@ include $(NVBOARD_HOME)/scripts/nvboard.mk
 INCFLAGS = $(addprefix -I, $(INC_PATH))
 CXXFLAGS += $(INCFLAGS) -DTOP_NAME="\"V$(TOPNAME)\""
 
-sim: $(VSRCS) $(CSRCS) $(NVBOARD_ARCHIVE)
+sim: $(VSRCS) $(CSRCS) $(NVBOARD_ARCHIVE) 
 	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!!
 	@echo "Compiling and simulating..."
 	@rm -rf $(OBJ_DIR)
@@ -46,7 +43,7 @@ sim: $(VSRCS) $(CSRCS) $(NVBOARD_ARCHIVE)
 		$(addprefix -CFLAGS , $(CXXFLAGS)) $(addprefix -LDFLAGS , $(LDFLAGS)) \
 		--Mdir $(OBJ_DIR) --exe -o $(abspath $(BIN))
 	@echo "Simulation complete."
-
+	@$(BIN)
 all: default
 
 run: $(BIN)
