@@ -1,11 +1,10 @@
 #include <nvboard.h>
 #include <Vtop.h>
 
-static Vtop dut;
+
+static TOP_NAME dut;
 
 void nvboard_bind_all_pins(Vtop* top);
-
-
 
 static void reset(int n) {
   dut.rst = 1;
