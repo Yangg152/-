@@ -26,8 +26,8 @@ begin
             count <= count + 1;
         end
     end
-    out1 = count % 10; // 个位数
-    out2 = count / 10; // 十位数
+    out1 <= count % 10; // 个位数
+    out2 <= count / 10; // 十位数
 end
 
 

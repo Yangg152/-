@@ -1,11 +1,11 @@
 module divclk(
-  input clk_50MHz,
+  input clk_5MHz,
   output reg clk_1Hz
 );
 
 reg [25:0] count;
 
-always @(posedge clk_50MHz) begin
+always @(posedge clk_5MHz) begin
   if (count == 5000000 - 1) begin
     count <= 0;
     clk_1Hz <= ~clk_1Hz;
