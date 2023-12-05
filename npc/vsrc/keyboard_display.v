@@ -17,7 +17,6 @@ parameter PRESS = 2'b01;
 parameter RELEASE = 2'b10;
 parameter init = 2'b11;
 
-
 // 初始化ROM
 reg [7:0] rom[0:255];
 // 初始化ROM
@@ -27,7 +26,6 @@ initial begin
     rom[8'h32] = 8'h62; // 'b'
     // ... 添加其他映射
 end
-
 
 // 寄存器和计数器
 reg [7:0] prev_keys;
