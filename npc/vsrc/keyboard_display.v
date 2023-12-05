@@ -83,7 +83,6 @@ always @(posedge clk or posedge rst) begin
       RELEASE:
         if (keys != prev_keys) begin
           state <= IDLE;
-          prev_keys <= keys;
           temp1 <= rom[keys];
           temp2 <= keys;
         end
