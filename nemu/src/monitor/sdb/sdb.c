@@ -18,6 +18,8 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "sdb.h"
+#include <memory/paddr.h>
+
 
 static int is_batch_mode = false;
 
@@ -49,10 +51,17 @@ static int cmd_c(char *args) {
 
 
 static int cmd_q(char *args) {
+  nemu_state.state = NEMU_QUIT;
   return -1;
 }
 
 static int cmd_help(char *args);
+
+static int cmd_si(char *args);
+
+static int cmd_info(char *args);
+
+static int cmd_x(char *args);
 
 static struct {
   const char *name;
@@ -62,6 +71,9 @@ static struct {
   { "help", "Display information about all supported commands", cmd_help },
   { "c", "Continue the execution of the program", cmd_c },
   { "q", "Exit NEMU", cmd_q },
+  { "si", "Pause the program after executing N instructions in one step,When N is not given, it defaults to 1", cmd_si },
+  { "info", "Print program status", cmd_info },
+  { "x", "Find the value of the expression EXPR and use the result as the starting memory address, output N consecutive 4 bytes in hexadecimal format", cmd_x },
 
   /* TODO: Add more commands */
 
@@ -89,6 +101,59 @@ static int cmd_help(char *args) {
     }
     printf("Unknown command '%s'\n", arg);
   }
+  return 0;
+}
+
+static int cmd_si(char *args) {
+  char *arg = strtok(NULL, " ");
+  int step = 0;
+  if(arg == NULL) {
+    step = 1 ;
+  } else {
+    step = atoi(arg);
+  }
+
+  if(step < -1) {
+    printf("Error, N is an integer greater than or equal to -1\n");  
+    return 0; 
+  }
+  cpu_exec(step);
+
+  return 0;
+}
+
+static int cmd_info(char *args) {
+  char *arg = strtok(NULL, " ");
+  if(arg == NULL)
+    printf("No args.\n");
+  else if(strcmp(arg, "r") == 0)
+    isa_reg_display();
+  //else if(strcmp(arg, "w") == 0)
+    //sdb_watchpoint_display()
+  return 0;
+}
+
+static int cmd_x(char *args) {
+  char *N = strtok(NULL," ");  
+  char *EXPR = strtok(NULL," ");  
+  int len;  
+  paddr_t address;  
+    
+  sscanf(N, "%d", &len);  
+  sscanf(EXPR, "%x", &address);  
+    
+  int i;
+  for(i = 0; i < len; i ++){  
+      printf("0x%x:",address);  
+      if(address >= 0x80000000) {
+        printf("%08x ",paddr_read(address,4));  
+      } else {
+        printf("%08x ",pmem_read(address,4));  
+      }
+      address += 4;  
+      printf("\n");  
+  }  
+
   return 0;
 }
 
@@ -125,7 +190,7 @@ void sdb_mainloop() {
     int i;
     for (i = 0; i < NR_CMD; i ++) {
       if (strcmp(cmd, cmd_table[i].name) == 0) {
-        if (cmd_table[i].handler(args) < 0) { return; }
+        if (cmd_table[i].handler(args) < 0) { return ; }
         break;
       }
     }
