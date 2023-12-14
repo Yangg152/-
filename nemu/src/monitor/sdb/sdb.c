@@ -20,7 +20,6 @@
 #include "sdb.h"
 #include <memory/paddr.h>
 
-
 static int is_batch_mode = false;
 
 void init_regex();
@@ -63,6 +62,8 @@ static int cmd_info(char *args);
 
 static int cmd_x(char *args);
 
+static int cmd_p(char *args);
+
 static struct {
   const char *name;
   const char *description;
@@ -74,6 +75,7 @@ static struct {
   { "si", "Pause the program after executing N instructions in one step,When N is not given, it defaults to 1", cmd_si },
   { "info", "Print program status", cmd_info },
   { "x", "Find the value of the expression EXPR and use the result as the starting memory address, output N consecutive 4 bytes in hexadecimal format", cmd_x },
+  { "p", "Calculate the value of the expression", cmd_p },
 
   /* TODO: Add more commands */
 
@@ -145,17 +147,25 @@ static int cmd_x(char *args) {
   int i;
   for(i = 0; i < len; i ++){  
       printf("0x%x:",address);  
-      if(address >= 0x80000000) {
-        printf("%08x ",paddr_read(address,4));  
-      } else {
-        printf("%08x ",pmem_read(address,4));  
-      }
+      //if(address >= 0x80000000) 
+      printf("%08x ",paddr_read(address,4));  
       address += 4;  
       printf("\n");  
   }  
 
   return 0;
 }
+
+static int cmd_p(char *args) {
+  char *arg = strtok(NULL, " ");
+  if(arg == NULL)
+    printf("No args.\n");
+  //else 
+    //expr(arg, 1)
+
+  return 0;
+}
+
 
 void sdb_set_batch_mode() {
   is_batch_mode = true;
