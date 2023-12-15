@@ -23,13 +23,20 @@ uint32_t choose(uint32_t n) {
 
 void gen_num() {
     char num[16];
-    sprintf(num, "%u", choose(1000));  // Generate a random number
+    sprintf(num, "%u", choose(100));  // Generate a random number
     strncat(buf, num, MAX_EXPR_LENGTH - strlen(buf));
 }
 
 void gen_rand_op() {
     const char *ops = "+-*/";
-    char op[3] = { ' ', ops[choose(strlen(ops))], ' ' };
+    int len = strlen(buf);
+    
+    if (len == 0 || strchr("+-*/(", buf[len - 1]) != NULL) {
+        // 如果buf为空或最后一个字符是运算符或左括号，则不添加新的运算符
+        return;
+    }
+
+    char op[3] = {' ', ops[choose(strlen(ops))], ' '};
     strncat(buf, op, MAX_EXPR_LENGTH - strlen(buf));
 }
 
@@ -44,31 +51,31 @@ void gen(char c) {
 static int num_open_parentheses = 0;
 
 static void gen_rand_expr() {
-    if (strlen(buf) + num_open_parentheses >= MAX_EXPR_LENGTH - 1) {
-        return; // 减去1预留空间来添加结束符号'\0'
+    if (strlen(buf) >= MAX_EXPR_LENGTH - 10) {
+        return;
     }
 
     switch (choose(3)) {
-    case 0:
-        gen_num();
-        break;
-    case 1:
-        if (num_open_parentheses < 3 && strlen(buf) + 2 < MAX_EXPR_LENGTH - 1) {
-            gen('(');
-            num_open_parentheses++;
-            gen_rand_expr();
-            if (strlen(buf) + num_open_parentheses < MAX_EXPR_LENGTH - 1) {
-                gen(')');
-                num_open_parentheses--;
-            } else { // 如果没有足够的空间来安全地关闭括号，就不要添加它
-                // 退回刚才添加的左括号
-                buf[strlen(buf) - 1] = '\0';
-                num_open_parentheses--;
+        case 0:
+            gen_num();
+            break;
+        case 1:
+            // 增加条件来限制递归深度
+            if (num_open_parentheses < 2 && strlen(buf) + 2 < MAX_EXPR_LENGTH - 1) {
+                gen('(');
+                num_open_parentheses++;
+                gen_rand_expr();
+                if (strlen(buf) + num_open_parentheses < MAX_EXPR_LENGTH - 1) {
+                    gen(')');
+                    num_open_parentheses--;
+                } else {
+                    buf[strlen(buf) - 1] = '\0'; // 移除未匹配的左括号
+                    num_open_parentheses--;
+                }
+            } else {
+                gen_rand_expr();  // 避免过深递归
             }
-        } else {
-            gen_rand_expr();  // 如果括号数量达到上限，生成一个不含括号的子表达式
-        }
-        break;
+            break;
     default:
         gen_rand_expr();
         if (choose(100) < 30) {
@@ -92,12 +99,13 @@ int main(int argc, char *argv[]) {
     int seed = time(0);
     num_open_parentheses = 0;
     srand(seed);
-    int loop = 1;
+    int desired_output_count = 10; // 默认输出10条
     if (argc > 1) {
-        sscanf(argv[1], "%d", &loop);
+        sscanf(argv[1], "%d", &desired_output_count);
     }
-    int i;
-    for (i = 0; i < loop; i++) {
+
+    int output_count = 0;
+    while (output_count < desired_output_count) {
         buf[0] = '\0';
         gen_rand_expr();
 
@@ -114,14 +122,15 @@ int main(int argc, char *argv[]) {
         fp = popen("/tmp/.expr", "r");
         assert(fp != NULL);
 
-        int result;
-        ret = fscanf(fp, "%d", &result);
+        unsigned result;
+        ret = fscanf(fp, "%u", &result);
         pclose(fp);
 
-        if (ret != EOF) {
-            // 检查是否除零
-            if (strstr(buf, "/ 0") == NULL) {
+        if (ret != EOF && strstr(buf, "/ 0") == NULL) {
+            unsigned threshold = 1000000; // 设置阈值
+            if (result < threshold) {
                 printf("%u %s\n", result, buf);
+                output_count++; // 只有有效结果才增加输出计数
             }
         }
     }

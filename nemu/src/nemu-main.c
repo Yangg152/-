@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
     char line[1024];
     while (fgets(line, sizeof(line), input_file) != NULL) {
         // 解析每行
-        char expression[1024];
+        char expression[1024] =" ";
         if (sscanf(line, "%*u %[^\n]", expression) != 1) {
             fprintf(stderr, "Invalid input format: %s", line);
             continue;

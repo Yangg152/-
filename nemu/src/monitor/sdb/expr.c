@@ -78,6 +78,7 @@ static Token tokens[1024] __attribute__((used)) = {};
 static int nr_token __attribute__((used))  = 0;
 
 static bool make_token(char *e) {
+  memset(tokens, 0, sizeof(tokens));
   int position = 0;
   int i;
   regmatch_t pmatch;
@@ -153,6 +154,7 @@ static bool make_token(char *e) {
     if (tokens[i].type == '-') {
       // 如果 '-' 是第一个 token 或者前一个 token 是运算符或左括号，则视为负号
       if (i == 0 || (tokens[i - 1].type != 1)) {
+        if (tokens[i - 1].type != ')')
         tokens[i].type = TK_NEG; // 假设 TK_NEG 代表负号
       }
     }
@@ -165,24 +167,19 @@ bool check_parentheses(int p, int q)
 {
   if (tokens[p].type != '(' || tokens[q].type != ')')
     return false;
-  int l, r;
-  l = p;
-  r = q;
-  while (l < r)
-  {
-    if(tokens[l].type == '(') {
-      if(tokens[r].type == ')') {
-        l++;
-        r--;
-        continue;
-      } else {
-        r--;
+  int balance = 0;
+  for (int i = p+1; i <= q-1; i++) {
+    if (tokens[i].type == '(') {
+      balance++; // 遇到左括号，增加计数
+    } else if (tokens[i].type == ')') {
+      balance--; // 遇到右括号，减少计数
+      if (balance < 0) {
+        return false; // 如果右括号比左括号多，说明没有匹配的左括号
       }
-    } else if (tokens[l].type == ')') {
-      return false;
-    } else {
-      l++;
     }
+  }
+  if(balance != 0) {
+    return false;
   }
   return true;
 }
