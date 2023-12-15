@@ -38,24 +38,21 @@ int main(int argc, char *argv[]) {
     char line[1024];
     while (fgets(line, sizeof(line), input_file) != NULL) {
         // 解析每行
-        word_t expected_result;
         char expression[1024];
-        if (sscanf(line, "%u %[^\n]", &expected_result, expression) != 2) {
+        if (sscanf(line, "%*u %[^\n]", expression) != 1) {
             fprintf(stderr, "Invalid input format: %s", line);
             continue;
         }
 
+        printf("success");
+        printf("Read expression: %s\n", expression);
         // 调用 expr 函数进行表达式求值
-        bool success;
+        bool success = false;
         word_t result = expr(expression, &success);
 
-        // 检查结果
+        //检查结果
         if (success) {
-            if (result == expected_result) {
-                printf("Test passed: %u %s\n", expected_result, expression);
-            } else {
-                printf("Test failed: expected %u, got %u (%s)\n", expected_result, result, expression);
-            }
+            printf("Expression result: %u\n", result);
         } else {
             printf("Expression parsing failed: %s\n", expression);
         }

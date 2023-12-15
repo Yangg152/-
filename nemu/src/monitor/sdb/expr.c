@@ -42,7 +42,7 @@ static struct rule {
   {"\\*", '*'},         // multiply
   {"\\/", '/'},         // divide
   {"==", TK_EQ},        // equal
-  {"[0-9]*", TK_NUM},   // number
+  {"[0-9]+", TK_NUM},   // number
   {"\\(", '('},         // (
   {"\\)", ')'},         // )
 
@@ -74,7 +74,7 @@ typedef struct token {
   char str[32];
 } Token;
 
-static Token tokens[128] __attribute__((used)) = {};
+static Token tokens[1024] __attribute__((used)) = {};
 static int nr_token __attribute__((used))  = 0;
 
 static bool make_token(char *e) {
@@ -88,13 +88,13 @@ static bool make_token(char *e) {
     /* Try all rules one by one. */
     for (i = 0; i < NR_REGEX; i ++) {
       if (regexec(&re[i], e + position, 1, &pmatch, 0) == 0 && pmatch.rm_so == 0) {
-        char *substr_start = e + position;
+        //char *substr_start = e + position;
         int substr_len = pmatch.rm_eo;
         if (substr_len > 32)
         panic("The expression string exceeds the length");
-
-        Log("match rules[%d] = \"%s\" at position %d with len %d: %.*s",
-            i, rules[i].regex, position, substr_len, substr_len, substr_start);
+        
+        //Log("match rules[%d] = \"%s\" at position %d with len %d: %.*s",
+        //   i, rules[i].regex, position, substr_len, substr_len, substr_start);
 
         position += substr_len;
 
@@ -104,6 +104,8 @@ static bool make_token(char *e) {
          */
 
         switch (rules[i].token_type) {
+          case 256:
+            break;
           case '+':
             tokens[nr_token ++].type = '+';
             break;
@@ -146,11 +148,11 @@ static bool make_token(char *e) {
     }
   }
 
-  //Handling negative sign situations
+  // Handling negative sign situations
   for (int i = 0; i < nr_token; i++) {
     if (tokens[i].type == '-') {
       // 如果 '-' 是第一个 token 或者前一个 token 是运算符或左括号，则视为负号
-      if (i == 0 || tokens[i - 1].type != 1) {
+      if (i == 0 || (tokens[i - 1].type != 1)) {
         tokens[i].type = TK_NEG; // 假设 TK_NEG 代表负号
       }
     }
@@ -166,10 +168,10 @@ bool check_parentheses(int p, int q)
   int l, r;
   l = p;
   r = q;
-  while (l < q)
+  while (l < r)
   {
     if(tokens[l].type == '(') {
-      if(tokens[q].type == ')') {
+      if(tokens[r].type == ')') {
         l++;
         r--;
         continue;
@@ -184,6 +186,7 @@ bool check_parentheses(int p, int q)
   }
   return true;
 }
+
 //Calculate the value of an expression
 uint32_t eval(int p, int q) {
   if (p > q) {
@@ -220,21 +223,21 @@ uint32_t eval(int p, int q) {
       } else if(deep == 0){  
         if(tokens[i].type == 2) {  // ==
           temp_priority = 1;
-          if (priority > temp_priority) {
+          if (priority >= temp_priority) {
             priority = temp_priority;
             op = i;
           }
         } 
         if((tokens[i].type == '+' || tokens[i].type == '-')) {
           temp_priority = 2;
-          if (priority > temp_priority) {
+          if (priority >= temp_priority) {
             priority = temp_priority;
             op = i;
           }
         }
         if((tokens[i].type == '*' || tokens[i].type == '/')) {
           temp_priority = 3;
-          if (priority > temp_priority) {
+          if (priority >= temp_priority) {
             priority = temp_priority;
             op = i;
           }
@@ -242,6 +245,7 @@ uint32_t eval(int p, int q) {
       }
     }
     if(op == -1 || deep != 0){
+      printf("%d  %d",p,q);
       printf("There is an issue with the calculation expression");
       return 0;
     }
