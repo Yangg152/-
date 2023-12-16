@@ -20,8 +20,10 @@
 typedef struct watchpoint {
   int NO;
   struct watchpoint *next;
-
-  /* TODO: Add more members if necessary */
+  bool flag = false; 
+  char expr[100] = {};
+  int new_value = 0;
+  int old_value = 0;
 
 } WP;
 
@@ -39,5 +41,55 @@ void init_wp_pool() {
   free_ = wp_pool;
 }
 
-/* TODO: Implement the functionality of watchpoint */
+// 申请一个新的监视点
+WP* new_wp(){
+  for(WP* p = free_ ; p -> next != NULL ; p = p -> next){
+      if( p -> flag == false){
+          p -> flag = true;
+          if(head == NULL){
+              head = p;
+          }
+          return p;
+      }
+  }
+  printf("No unuse point.\n");
+  assert(0);
+  return NULL;
+}
+
+// 释放监视点
+void free_wp(WP *wp) {
+    if (head == NULL) {
+        printf("Watchpoint list is empty.\n");
+        return;
+    }
+
+    if (head->NO == wp->NO) {
+        // 要释放的是链表的头节点
+        head->flag = false;
+        head = NULL;
+        printf("Free watchpoint success.\n");
+        return;
+    }
+
+    // 遍历链表查找要释放的监视点
+    for (WP* p = head; p->next != NULL; p = p->next) {
+        if (p->next->NO == wp->NO) {
+            // 找到了要释放的节点
+            wp->flag = false;
+            memset(wp->expr, 0, sizeof(wp->expr));  // 使用memset清空表达式字符串
+            wp->new_value = 0;
+            wp->old_value = 0;
+            p->next = p->next->next;
+            printf("Free watchpoint success.\n");
+            return;
+        }
+    }
+
+    // 如果循环结束仍未找到要释放的节点
+    printf("Watchpoint not found in the list.\n");
+}
+
+
+
 

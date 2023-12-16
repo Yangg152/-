@@ -64,6 +64,8 @@ static int cmd_x(char *args);
 
 static int cmd_p(char *args);
 
+static int cmd_w(char *args);
+
 static struct {
   const char *name;
   const char *description;
@@ -76,6 +78,7 @@ static struct {
   { "info", "Print program status", cmd_info },
   { "x", "Find the value of the expression EXPR and use the result as the starting memory address, output N consecutive 4 bytes in hexadecimal format", cmd_x },
   { "p", "Calculate the value of the expression", cmd_p },
+  { "w", "Set up monitoring points", cmd_w },
 
   /* TODO: Add more commands */
 
@@ -157,11 +160,28 @@ static int cmd_x(char *args) {
 }
 
 static int cmd_p(char *args) {
-  char *arg = strtok(NULL, " ");
-  if(arg == NULL)
+  if(args == NULL)
     printf("No args.\n");
-  //else 
-    //expr(arg, 1)
+  else {
+    bool success = false;
+    word_t result = expr(args, &success);
+        //检查结果
+    if (success) {
+        printf("Expression result: %u\n", result);
+    } else {
+        printf("Expression parsing failed: %s\n", args);
+    }
+  }
+  return 0;
+}
+
+static int cmd_w(char *args) {
+  if(args == NULL)
+    printf("No args.\n");
+  else {
+    new_wp(args);
+
+  }
 
   return 0;
 }

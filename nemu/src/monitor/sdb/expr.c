@@ -21,7 +21,7 @@
 #include <regex.h>
 
 enum {
-  TK_NOTYPE = 256,  TK_NUM = 1, TK_EQ = 2, TK_NEG = 3,
+  TK_NOTYPE = 256,  TK_NUM = 1, TK_EQ = 2, TK_NEQ = 3, TK_AND =4, TK_OR = 5, TK_lessthan = 6, TK_bigerthan = 7,TK_NEG = 10, TK_Yingyong = 11,
 
   /* TODO: Add more token types */
 
@@ -41,11 +41,17 @@ static struct rule {
   {"\\-", '-'},         // minus
   {"\\*", '*'},         // multiply
   {"\\/", '/'},         // divide
-  {"==", TK_EQ},        // equal
   {"[0-9]+", TK_NUM},   // number
   {"\\(", '('},         // (
   {"\\)", ')'},         // )
-
+  {"==", TK_EQ},        // equal
+  {"!=", TK_NEQ},        // not equal
+  {"&&", TK_AND},        // &&
+  {"\\|\\|", TK_OR},        // &&
+  {"<=", TK_lessthan},        // less than
+  {">=", TK_bigerthan},     // biger than
+  {"<", '<'},        // <
+  {">", '>'},        // >
 };
 
 #define NR_REGEX ARRLEN(rules)
@@ -125,6 +131,12 @@ static bool make_token(char *e) {
           case ')':
             tokens[nr_token ++].type = ')';
             break;
+          case '>':
+            tokens[nr_token ++].type = '>';
+            break;
+          case '<':
+            tokens[nr_token ++].type = '<';
+            break;
           case 1:
             tokens[nr_token].type = 1;
             strncpy(tokens[nr_token++].str, &e[position - substr_len], substr_len);
@@ -133,12 +145,31 @@ static bool make_token(char *e) {
             tokens[nr_token].type = 2;
             strcpy(tokens[nr_token++].str, "==");
             break;
+          case 3:
+            tokens[nr_token].type = 3;
+            strcpy(tokens[nr_token++].str, "!=");
+            break;
+          case 4:
+            tokens[nr_token].type = 4;
+            strcpy(tokens[nr_token++].str, "&&");
+            break;
+          case 5:
+            tokens[nr_token].type = 5;
+            strcpy(tokens[nr_token++].str, "||");
+            break;
+          case 6:
+            tokens[nr_token].type = 6;
+            strcpy(tokens[nr_token++].str, "<=");
+            break;
+          case 7:
+            tokens[nr_token].type = 7;
+            strcpy(tokens[nr_token++].str, ">=");
+            break;
 
           default: 
             printf("\"%s\" and No rules is com.\n", rules[i].regex);
             break;
         }
-
         break;
       }
     }
@@ -157,6 +188,13 @@ static bool make_token(char *e) {
         if (tokens[i - 1].type != ')')
         tokens[i].type = TK_NEG; // 假设 TK_NEG 代表负号
       }
+    }
+  }
+
+  for (i = 0; i < nr_token; i ++) {
+    if (tokens[i].type == '*' && (i == 0 || tokens[i - 1].type != 1 ) ) {
+      if (tokens[i - 1].type != ')')
+      tokens[i].type = TK_Yingyong;
     }
   }
 
@@ -204,41 +242,67 @@ uint32_t eval(int p, int q) {
       */
     return eval(p + 1, q - 1);
   }
-  else if (tokens[p].type == 3) {
+
+  else if (tokens[p].type == TK_Yingyong) {
+    uint32_t *ptr = (uint32_t *)(uintptr_t)eval(p + 1, q);
+    return *ptr;
+  }
+  else if (tokens[p].type == TK_NEG) {
     return -eval(p + 1, q);
   }
   else {
     int op = -1;
     int deep = 0;
-    int priority = 999;
-    int temp_priority = 0;
+    int priority = -1;
+    int temp_priority = 999;
     for(int i = p; i <= q; i++){
       if(tokens[i].type == '(') {
         deep++;
       } else if(tokens[i].type == ')') {
         deep--;
       } else if(deep == 0){  
-        if(tokens[i].type == 2) {  // ==
+        if((tokens[i].type == '*' || tokens[i].type == '/')) {
           temp_priority = 1;
-          if (priority >= temp_priority) {
+          if (priority <= temp_priority) {
             priority = temp_priority;
             op = i;
           }
-        } 
+        }
         if((tokens[i].type == '+' || tokens[i].type == '-')) {
           temp_priority = 2;
-          if (priority >= temp_priority) {
+          if (priority <= temp_priority) {
             priority = temp_priority;
             op = i;
           }
         }
-        if((tokens[i].type == '*' || tokens[i].type == '/')) {
+        if(tokens[i].type == '<' || tokens[i].type == '>' || tokens[i].type == 6 || tokens[i].type == 7) { // <, >, <=, >=
           temp_priority = 3;
-          if (priority >= temp_priority) {
+          if (priority <= temp_priority) {
             priority = temp_priority;
             op = i;
           }
-        }
+        }  
+        if(tokens[i].type == 2 || tokens[i].type == 3) {  // == !=
+          temp_priority = 4;
+          if (priority <= temp_priority) {
+            priority = temp_priority;
+            op = i;
+          }
+        }   
+        if(tokens[i].type == 4) {  // &&
+          temp_priority = 5;
+          if (priority <= temp_priority) {
+            priority = temp_priority;
+            op = i;
+          }
+        }  
+        if(tokens[i].type == 5) {  // ||
+          temp_priority = 6;
+          if (priority <= temp_priority) {
+            priority = temp_priority;
+            op = i;
+          }
+        }        
       }
     }
     if(op == -1 || deep != 0){
@@ -264,8 +328,22 @@ uint32_t eval(int p, int q) {
           return 0;
         }
         return val1 / val2;
+      case '>': 
+        return val1 > val2;
+      case '<': 
+        return val1 < val2;                
       case 2: 
         return val1 == val2;
+      case 3: 
+        return val1 != val2;
+      case 4: 
+        return val1 && val2;
+      case 5: 
+        return val1 || val2;
+      case 6: 
+        return val1 <= val2;
+      case 7: 
+        return val1 >= val2;        
       default: 
         panic("No this type");
     }
@@ -284,4 +362,38 @@ word_t expr(char *e, bool *success) {
   return result;
 }
 
+void test_expr() {
+
+  FILE *input_file = fopen("/home/yang/Desktop/workspace/ysys-study/nemu/tools/gen-expr/build/input.txt", "r");
+    if (!input_file) {
+        panic("Failed to open input file.\n");
+    }
+
+    // 读取每一行
+    char line[1024];
+    while (fgets(line, sizeof(line), input_file) != NULL) {
+        // 解析每行
+        char expression[1024] =" ";
+        if (sscanf(line, "%*u %[^\n]", expression) != 1) {
+            fprintf(stderr, "Invalid input format: %s", line);
+            continue;
+        }
+
+        printf("success");
+        printf("Read expression: %s\n", expression);
+        // 调用 expr 函数进行表达式求值
+        bool success = false;
+        word_t result = expr(expression, &success);
+
+        //检查结果
+        if (success) {
+            printf("Expression result: %u\n", result);
+        } else {
+            printf("Expression parsing failed: %s\n", expression);
+        }
+    }
+
+    // 关闭文件
+    fclose(input_file);
+}
 
