@@ -19,9 +19,14 @@
  * Type 'man regex' for more information about POSIX regex functions.
  */
 #include <regex.h>
+#include <memory/paddr.h>
+#include "sdb.h"
+
+bool outputflag = 0; //HEX flag
 
 enum {
-  TK_NOTYPE = 256,  TK_NUM = 1, TK_EQ = 2, TK_NEQ = 3, TK_AND =4, TK_OR = 5, TK_lessthan = 6, TK_bigerthan = 7,TK_NEG = 10, TK_Yingyong = 11,
+  TK_NOTYPE = 256,  TK_NUM = 1, TK_EQ = 2, TK_NEQ = 3, TK_AND =4, TK_OR = 5, TK_lessthan = 6, TK_bigerthan = 7,
+  TK_NEG = 10, TK_Yingyong = 11, TK_HEX = 12, TK_REG = 13,
 
   /* TODO: Add more token types */
 
@@ -41,6 +46,8 @@ static struct rule {
   {"\\-", '-'},         // minus
   {"\\*", '*'},         // multiply
   {"\\/", '/'},         // divide
+  {"0[xX][0-9a-fA-F]+", TK_HEX}, //HEX
+  {"\\$(0|ra|sp|gp|tp|t[0-6]|s[0-9]|a[0-7])", TK_REG}, //reg
   {"[0-9]+", TK_NUM},   // number
   {"\\(", '('},         // (
   {"\\)", ')'},         // )
@@ -77,7 +84,7 @@ void init_regex() {
 
 typedef struct token {
   int type;
-  char str[32];
+  char str[128];
 } Token;
 
 static Token tokens[1024] __attribute__((used)) = {};
@@ -88,6 +95,7 @@ static bool make_token(char *e) {
   int position = 0;
   int i;
   regmatch_t pmatch;
+  outputflag = false;
 
   nr_token = 0;
 
@@ -97,7 +105,7 @@ static bool make_token(char *e) {
       if (regexec(&re[i], e + position, 1, &pmatch, 0) == 0 && pmatch.rm_so == 0) {
         //char *substr_start = e + position;
         int substr_len = pmatch.rm_eo;
-        if (substr_len > 32)
+        if (substr_len > 128)
         panic("The expression string exceeds the length");
         
         //Log("match rules[%d] = \"%s\" at position %d with len %d: %.*s",
@@ -165,6 +173,14 @@ static bool make_token(char *e) {
             tokens[nr_token].type = 7;
             strcpy(tokens[nr_token++].str, ">=");
             break;
+          case 12:
+            tokens[nr_token].type = 12;
+            strncpy(tokens[nr_token++].str, &e[position - substr_len], substr_len);
+            break;            
+          case 13:
+            tokens[nr_token].type = 13;
+            strncpy(tokens[nr_token++].str, &e[position - substr_len], substr_len);
+            break; 
 
           default: 
             printf("\"%s\" and No rules is com.\n", rules[i].regex);
@@ -190,11 +206,85 @@ static bool make_token(char *e) {
       }
     }
   }
-
+  // *
   for (i = 0; i < nr_token; i ++) {
     if (tokens[i].type == '*' && (i == 0 || tokens[i - 1].type != 1 ) ) {
       if (tokens[i - 1].type != ')')
+      outputflag = true;
       tokens[i].type = TK_Yingyong;
+    }
+  }
+  //HEX
+  for(int i = 0 ; i < nr_token ; i ++) {
+    if(tokens[i].type == 12) {
+      outputflag = true;
+      uint32_t value = strtoul(tokens[i].str, NULL, 16);
+      // 处理 0 的特殊情况
+      if (value == 0) {
+        strcpy(tokens[i].str, "0");
+      } else {
+        // 反转转换逻辑
+        char tempStr[32];
+        int index = 0;
+
+        // 逐个字符转换
+        while (value > 0) {
+            int digit = value % 10;
+            tempStr[index++] = '0' + digit;
+            value /= 10;
+        }
+        tempStr[index] = '\0';
+
+        // 反转字符串以获得正确的顺序
+        int strLen = strlen(tempStr);
+        for (int j = 0; j < strLen / 2; j++) {
+            char temp = tempStr[j];
+            tempStr[j] = tempStr[strLen - j - 1];
+            tempStr[strLen - j - 1] = temp;
+        }
+
+        // 将转换后的字符串复制回 tokens[i].str
+        strcpy(tokens[i].str, tempStr);
+      }
+    }
+  }
+  //reg
+  for(int i = 0 ; i < nr_token ; i ++) {
+    if(tokens[i].type == 13) {
+      outputflag = true;
+      if (tokens[i].str[0] == '$' && tokens[i].str[1] != '0') {
+        memmove(tokens[i].str, tokens[i].str + 1, strlen(tokens[i].str));
+      }
+      bool success = false;
+      uint32_t value = isa_reg_str2val(tokens[i].str, &success);
+      if(success) {
+        // 处理 0 的特殊情况
+        if (value == 0) {
+          strcpy(tokens[i].str, "0");
+        } else {
+          // 反转转换逻辑
+          char tempStr[32];
+          int index = 0;
+
+          // 逐个字符转换
+          while (value > 0) {
+              int digit = value % 10;
+              tempStr[index++] = '0' + digit;
+              value /= 10;
+          }
+          tempStr[index] = '\0';
+
+          // 反转字符串以获得正确的顺序
+          int strLen = strlen(tempStr);
+          for (int j = 0; j < strLen / 2; j++) {
+              char temp = tempStr[j];
+              tempStr[j] = tempStr[strLen - j - 1];
+              tempStr[strLen - j - 1] = temp;
+          }
+          // 将转换后的字符串复制回 tokens[i].str
+          strcpy(tokens[i].str, tempStr);
+        }
+      }
     }
   }
 
@@ -244,8 +334,10 @@ uint32_t eval(int p, int q) {
   }
 
   else if (tokens[p].type == TK_Yingyong) {
-    uint32_t *ptr = (uint32_t *)(uintptr_t)eval(p + 1, q);
-    return *ptr;
+    paddr_t value = eval(p + 1, q);
+    //paddr_t address; 
+    uint32_t result = paddr_read(value,4);
+    return result;
   }
   else if (tokens[p].type == TK_NEG) {
     return -eval(p + 1, q);

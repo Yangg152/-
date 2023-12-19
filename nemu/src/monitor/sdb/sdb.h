@@ -19,6 +19,9 @@
 #include <common.h>
 
 word_t expr(char *e, bool *success);
-void new_wp(char *e);
+bool scan_all_watchpoint();
+void create_watchpoint(char* args);
+void sdb_watchpoint_display();
+void delete_watchpoint(int no);
 
 #endif

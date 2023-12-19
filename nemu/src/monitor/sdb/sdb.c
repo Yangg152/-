@@ -66,6 +66,8 @@ static int cmd_p(char *args);
 
 static int cmd_w(char *args);
 
+static int cmd_d(char *args);
+
 static struct {
   const char *name;
   const char *description;
@@ -79,6 +81,8 @@ static struct {
   { "x", "Find the value of the expression EXPR and use the result as the starting memory address, output N consecutive 4 bytes in hexadecimal format", cmd_x },
   { "p", "Calculate the value of the expression", cmd_p },
   { "w", "Set up monitoring points", cmd_w },
+  { "d", "Delete monitoring point with serial number N", cmd_d },
+
 
   /* TODO: Add more commands */
 
@@ -133,8 +137,9 @@ static int cmd_info(char *args) {
     printf("No args.\n");
   else if(strcmp(arg, "r") == 0)
     isa_reg_display();
-  //else if(strcmp(arg, "w") == 0)
-    //sdb_watchpoint_display()
+  else if(strcmp(arg, "w") == 0)
+    sdb_watchpoint_display();
+
   return 0;
 }
 
@@ -149,7 +154,7 @@ static int cmd_x(char *args) {
     
   int i;
   for(i = 0; i < len; i ++){  
-      printf("0x%x:",address);  
+      printf("0x%08x:",address);  
       //if(address >= 0x80000000) 
       printf("%08x ",paddr_read(address,4));  
       address += 4;  
@@ -164,10 +169,15 @@ static int cmd_p(char *args) {
     printf("No args.\n");
   else {
     bool success = false;
+    extern bool outputflag;
     word_t result = expr(args, &success);
         //检查结果
     if (success) {
+      if(outputflag == false){
         printf("Expression result: %u\n", result);
+      } else {
+        printf("Expression result: %08x\n", result);
+      }
     } else {
         printf("Expression parsing failed: %s\n", args);
     }
@@ -179,13 +189,22 @@ static int cmd_w(char *args) {
   if(args == NULL)
     printf("No args.\n");
   else {
-    new_wp(args);
-
+    create_watchpoint(args);
   }
 
   return 0;
 }
 
+static int cmd_d(char *args) {
+  if(args == NULL)
+    printf("No args.\n");
+  else {
+    int num = atoi(args);
+    delete_watchpoint(num);
+  }
+
+  return 0;
+}
 
 void sdb_set_batch_mode() {
   is_batch_mode = true;

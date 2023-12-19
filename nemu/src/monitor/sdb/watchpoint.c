@@ -20,10 +20,10 @@
 typedef struct watchpoint {
   int NO;
   struct watchpoint *next;
-  bool flag = false; 
-  char expr[100] = {};
-  int new_value = 0;
-  int old_value = 0;
+  bool flag; 
+  char expr[100];
+  int new_value;
+  int old_value;
 
 } WP;
 
@@ -90,6 +90,58 @@ void free_wp(WP *wp) {
     printf("Watchpoint not found in the list.\n");
 }
 
+void sdb_watchpoint_display(){
+    bool flag = true;
+    for(int i = 0 ; i < NR_WP ; i ++){
+        if(wp_pool[i].flag){
+            printf("Watchpoint.No: %d, expr = \"%s\", old_value = %d, new_value = %d\n",
+                    wp_pool[i].NO, wp_pool[i].expr, wp_pool[i].old_value, wp_pool[i].new_value);
+                flag = false;
+        }
+    }
+    if(flag) printf("No watchpoint now.\n");
+}
+
+void delete_watchpoint(int no){
+  for(int i = 0 ; i < NR_WP ; i ++)
+    if(wp_pool[i].NO == no){
+      free_wp(&wp_pool[i]);
+      return ;
+  }
+}
+
+void create_watchpoint(char* args){
+  WP* p =  new_wp();
+  strcpy(p -> expr, args);
+  bool success = false;
+  int tmp = expr(p -> expr,&success);
+  if(success) p -> old_value = tmp;
+  else printf("There was an issue with expr evaluation when creating a watchpoint\n");
+  printf("Create watchpoint No.%d success.\n", p -> NO);
+}
+
+bool scan_all_watchpoint(){
+  for(int i = 0 ; i < NR_WP; i ++){
+    if(wp_pool[i].flag)
+    {
+        bool success = false;
+        int tmp = expr(wp_pool[i].expr, &success);
+        if(success){
+            if(tmp != wp_pool[i].old_value)
+            {
+              return true;
+            }
+            else
+              return false;
+        }
+        else{
+            printf("expr error.\n");
+            assert(0);
+        }
+    }
+  }
+  return false;
+}
 
 
 
