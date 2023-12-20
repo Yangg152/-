@@ -22,8 +22,8 @@ typedef struct watchpoint {
   struct watchpoint *next;
   bool flag; 
   char expr[100];
-  int new_value;
-  int old_value;
+  uint32_t new_value;
+  uint32_t old_value;
 
 } WP;
 
@@ -94,7 +94,7 @@ void sdb_watchpoint_display(){
     bool flag = true;
     for(int i = 0 ; i < NR_WP ; i ++){
         if(wp_pool[i].flag){
-            printf("Watchpoint.No: %d, expr = \"%s\", old_value = %d, new_value = %d\n",
+            printf("Watchpoint.No: %d, expr = \"%s\", old_value = 0x%08x, new_value = 0x%08x\n",
                     wp_pool[i].NO, wp_pool[i].expr, wp_pool[i].old_value, wp_pool[i].new_value);
                 flag = false;
         }
@@ -114,7 +114,7 @@ void create_watchpoint(char* args){
   WP* p =  new_wp();
   strcpy(p -> expr, args);
   bool success = false;
-  int tmp = expr(p -> expr,&success);
+  uint32_t tmp = expr(p -> expr,&success);
   if(success) p -> old_value = tmp;
   else printf("There was an issue with expr evaluation when creating a watchpoint\n");
   printf("Create watchpoint No.%d success.\n", p -> NO);
@@ -125,10 +125,12 @@ bool scan_all_watchpoint(){
     if(wp_pool[i].flag)
     {
         bool success = false;
-        int tmp = expr(wp_pool[i].expr, &success);
+        uint32_t tmp = expr(wp_pool[i].expr, &success);
         if(success){
-            if(tmp != wp_pool[i].old_value)
+            if(tmp != wp_pool[i].new_value)
             {
+              wp_pool[i].new_value = wp_pool[i].old_value;
+              wp_pool[i].new_value = tmp;
               return true;
             }
             else

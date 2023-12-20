@@ -176,7 +176,7 @@ static int cmd_p(char *args) {
       if(outputflag == false){
         printf("Expression result: %u\n", result);
       } else {
-        printf("Expression result: %08x\n", result);
+        printf("Expression result: 0x%08x\n", result);
       }
     } else {
         printf("Expression parsing failed: %s\n", args);

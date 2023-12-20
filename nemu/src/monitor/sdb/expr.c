@@ -47,7 +47,7 @@ static struct rule {
   {"\\*", '*'},         // multiply
   {"\\/", '/'},         // divide
   {"0[xX][0-9a-fA-F]+", TK_HEX}, //HEX
-  {"\\$(0|ra|sp|gp|tp|t[0-6]|s[0-9]|a[0-7])", TK_REG}, //reg
+  {"\\$(0|pc|ra|sp|gp|tp|t[0-6]|s[0-9]|a[0-7])", TK_REG}, //reg
   {"[0-9]+", TK_NUM},   // number
   {"\\(", '('},         // (
   {"\\)", ')'},         // )
@@ -256,7 +256,12 @@ static bool make_token(char *e) {
         memmove(tokens[i].str, tokens[i].str + 1, strlen(tokens[i].str));
       }
       bool success = false;
-      uint32_t value = isa_reg_str2val(tokens[i].str, &success);
+      uint32_t value;
+      if (strstr(tokens[i].str, "pc") != NULL) {
+        value = pc_reg(tokens[i].str, &success);
+      } else {
+        value = isa_reg_str2val(tokens[i].str, &success);
+      }
       if(success) {
         // 处理 0 的特殊情况
         if (value == 0) {

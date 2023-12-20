@@ -43,7 +43,7 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
   bool success = scan_all_watchpoint();
   if(success){
     nemu_state.state = NEMU_STOP;
-    printf("Trigger monitoring points");
+    printf("Trigger monitoring points\n");
     return ;
   } 
 #endif 
