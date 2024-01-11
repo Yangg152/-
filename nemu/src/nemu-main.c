@@ -30,7 +30,6 @@ int main(int argc, char *argv[]) {
 #else
   init_monitor(argc, argv);
 #endif
-
   //test_expr();
   /* Start engine. */
   engine_start();
