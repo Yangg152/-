@@ -1,22 +1,62 @@
 module top (
   input clk,
   input rst,
-  output reg [6:0] out1,
-  output reg [6:0] out2,
-  output reg [6:0] out3,
-  output reg [6:0] out4,
-  output reg [6:0] out5,
-  output reg [6:0] out6,
-  output reg [7:0] prbs_output // 8位伪随机序列输出
+  input [31:0] inst,
+  output reg [31:0] out,
+  output reg [31:0] pc // 添加一个输出端口
 );
+  reg  [31:0]   pc_internal;
+  wire [31:0]   imm;
+  wire [4:0]    rd, rs1;
+  wire [6:0]    opcode7;
+  wire [2:0]    opcode3;
+  wire [31:0]   wdata;
+  wire          wen;
 
-  wire [3:0] cout1;
-  wire [3:0] cout2;
-  wire [3:0] cout3;
-  wire [3:0] cout4;
-  wire [3:0] cout5;
-  wire [3:0] cout6;
-  wire clk1hz;
-  wire [7:0] keyout;
+  // 将内部 pc 与外部 pc 同步
+  always @(posedge clk) begin
+    pc_internal <= pc;
+  end
 
+  always @(posedge clk) begin
+    if(rst) begin
+      pc_internal <= 32'h80000000;
+    end
+    else begin
+      pc_internal <= pc_internal + 4;
+    end
+  end
+
+  // 将内部 pc 输出到外部 pc
+  assign pc = pc_internal;
+
+  // IFU ifu (
+  //   .clk         (clk),
+  //   .rst         (rst),
+  //   .pc          (pc_n)
+  // );
+
+  IDU idu (
+    .clk         (clk),
+    .rst         (rst),
+    .inst        (inst),
+    .imm         (imm),
+    .rd          (rd),
+    .rs1         (rs1),
+    .opcode7     (opcode7),
+    .opcode3     (opcode3)
+  );
+
+  EXU exu(
+    .clk         (clk),
+    .rst         (rst),
+    .immI        (imm),
+    .rd          (rd),
+    .rs1         (rs1),
+    .opcode7     (opcode7),
+    .opcode3     (opcode3),
+    .wdata       (wdata),
+    .wen         (wen)
+  );
+  
 endmodule

@@ -15,25 +15,28 @@ class Vtop___024root final : public VerilatedModule {
     // DESIGN SPECIFIC STATE
     VL_IN8(clk,0,0);
     VL_IN8(rst,0,0);
-    VL_OUT8(out1,6,0);
-    VL_OUT8(out2,6,0);
-    VL_OUT8(out3,6,0);
-    VL_OUT8(out4,6,0);
-    VL_OUT8(out5,6,0);
-    VL_OUT8(out6,6,0);
-    VL_OUT8(prbs_output,7,0);
-    CData/*3:0*/ top__DOT__cout1;
-    CData/*3:0*/ top__DOT__cout2;
-    CData/*3:0*/ top__DOT__cout3;
-    CData/*3:0*/ top__DOT__cout4;
-    CData/*3:0*/ top__DOT__cout5;
-    CData/*3:0*/ top__DOT__cout6;
-    CData/*0:0*/ top__DOT__clk1hz;
-    CData/*7:0*/ top__DOT__keyout;
+    CData/*4:0*/ top__DOT__rd;
+    CData/*4:0*/ top__DOT__rs1;
+    CData/*6:0*/ top__DOT__opcode7;
+    CData/*2:0*/ top__DOT__opcode3;
+    CData/*0:0*/ top__DOT__wen;
+    CData/*0:0*/ __Vtrigrprev__TOP__clk;
     CData/*0:0*/ __VactContinue;
+    VL_IN(inst,31,0);
+    VL_OUT(out,31,0);
+    VL_OUT(pc,31,0);
+    IData/*31:0*/ top__DOT__pc_internal;
+    IData/*31:0*/ top__DOT__imm;
+    IData/*31:0*/ top__DOT__wdata;
+    IData/*31:0*/ top__DOT__exu__DOT__rs1_value;
+    IData/*31:0*/ top__DOT__exu__DOT__regfile__DOT__unnamedblk1__DOT__i;
+    IData/*31:0*/ __VstlIterCount;
     IData/*31:0*/ __VactIterCount;
-    VlTriggerVec<0> __VactTriggered;
-    VlTriggerVec<0> __VnbaTriggered;
+    VlUnpacked<IData/*31:0*/, 32> top__DOT__exu__DOT__regfile__DOT__rf;
+    VlUnpacked<CData/*0:0*/, 2> __Vm_traceActivity;
+    VlTriggerVec<1> __VstlTriggered;
+    VlTriggerVec<1> __VactTriggered;
+    VlTriggerVec<1> __VnbaTriggered;
 
     // INTERNAL VARIABLES
     Vtop__Syms* const vlSymsp;
