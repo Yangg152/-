@@ -7,4 +7,5 @@ main.o: /home/yang/Desktop/workspace/ysys-study/YPC/csrc/main.cpp \
  /usr/local/share/verilator/include/verilated_vcd_c.h \
  /usr/local/share/verilator/include/verilated.h \
  /usr/local/share/verilator/include/verilated_trace.h \
- /usr/local/share/verilator/include/verilated_trace_defs.h Vtop.h
+ /usr/local/share/verilator/include/verilated_trace_defs.h Vtop.h \
+ /usr/local/share/verilator/include/vltstd/svdpi.h

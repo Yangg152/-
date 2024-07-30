@@ -30,6 +30,9 @@ void mem_date() {
     addi_instr = ((imm & 0xfff) << 20) | (rs1 << 15) | (rd << 7) | (opcode);
     // 存储到内存中（假设存储到地址0）
     mem[1] = addi_instr;
+
+    addi_instr = 0x00100073;
+    mem[2] = addi_instr;
 }
 
 unsigned int pmem_read(unsigned int pc) {
@@ -41,6 +44,17 @@ unsigned int pmem_read(unsigned int pc) {
     } else {
         // 如果地址超出了指令存储器的范围，返回0
         return 0;
+    }
+}
+
+bool top_out = 0;
+
+extern "C" void top_break(bool re) {
+    if(re == 1) {
+        top_out =  1;
+    }
+    else {
+        top_out =  0;
     }
 }
 
@@ -57,6 +71,7 @@ int main(int argc, char** argv, char** env) {
     top->clk = 0;
     top->eval();    
     while (sim_time < MAX_SIM_TIME) {
+    //while (!top_out) {
         if(sim_time > 8) {
             top->rst = 0; 
         }
@@ -66,8 +81,16 @@ int main(int argc, char** argv, char** env) {
         top->eval(); 
         m_trace->dump(sim_time);
         sim_time++; // 更新仿真时间
+        if(top_out) {
+            top->clk ^= 1; 
+            top->eval(); 
+            top->inst = pmem_read(top->pc);
+            top->eval(); 
+            m_trace->dump(sim_time);
+            sim_time++; // 更新仿真时间
+            break;
+        }
     }
-
     m_trace->close();
     delete top;
     exit(EXIT_SUCCESS);

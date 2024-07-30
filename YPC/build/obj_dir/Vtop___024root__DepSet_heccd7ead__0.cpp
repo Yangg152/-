@@ -3,8 +3,11 @@
 // See Vtop.h for the primary calling header
 
 #include "verilated.h"
+#include "verilated_dpi.h"
 
 #include "Vtop___024root.h"
+
+void Vtop___024root____Vdpiimwrap_top__DOT__top_break_TOP(CData/*0:0*/ break_out);
 
 VL_INLINE_OPT void Vtop___024root___ico_sequent__TOP__0(Vtop___024root* vlSelf) {
     if (false && vlSelf) {}  // Prevent unused
@@ -14,9 +17,9 @@ VL_INLINE_OPT void Vtop___024root___ico_sequent__TOP__0(Vtop___024root* vlSelf) 
     if (vlSelf->rst) {
         vlSelf->top__DOT__rd = 0U;
         vlSelf->top__DOT__rs2 = 0U;
+        vlSelf->top__DOT__rs1 = 0U;
         vlSelf->top__DOT__opcode7 = 0U;
         vlSelf->top__DOT__opcode3 = 0U;
-        vlSelf->top__DOT__rs1 = 0U;
         vlSelf->top__DOT__imm = 0U;
         vlSelf->top__DOT__wen = 0U;
     } else {
@@ -24,23 +27,28 @@ VL_INLINE_OPT void Vtop___024root___ico_sequent__TOP__0(Vtop___024root* vlSelf) 
                                          >> 7U));
         vlSelf->top__DOT__rs2 = (0x1fU & (vlSelf->inst 
                                           >> 0x14U));
+        vlSelf->top__DOT__rs1 = (0x1fU & (vlSelf->inst 
+                                          >> 0xfU));
         vlSelf->top__DOT__opcode7 = (0x7fU & vlSelf->inst);
         vlSelf->top__DOT__opcode3 = (7U & (vlSelf->inst 
                                            >> 0xcU));
-        vlSelf->top__DOT__rs1 = (0x1fU & (vlSelf->inst 
-                                          >> 0xfU));
         vlSelf->top__DOT__imm = (((- (IData)((vlSelf->inst 
                                               >> 0x1fU))) 
                                   << 0xbU) | (0x7ffU 
                                               & (vlSelf->inst 
                                                  >> 0x14U)));
-        vlSelf->top__DOT__wen = ((0U != vlSelf->top__DOT__imm)
-                                  ? 1U : 0U);
+        vlSelf->top__DOT__wen = (0U != vlSelf->top__DOT__imm);
     }
+    vlSelf->break_out = ((0x73U == (IData)(vlSelf->top__DOT__opcode7)) 
+                         & (IData)(((0U == (IData)(vlSelf->top__DOT__opcode3)) 
+                                    & (0x100000U == 
+                                       (0x7ff00000U 
+                                        & vlSelf->inst)))));
     vlSelf->top__DOT__result = (vlSelf->top__DOT__imm 
                                 + ((0U == (IData)(vlSelf->top__DOT__rs1))
                                     ? 0U : vlSelf->top__DOT__regfile__DOT__rf
                                    [vlSelf->top__DOT__rs1]));
+    Vtop___024root____Vdpiimwrap_top__DOT__top_break_TOP(vlSelf->break_out);
 }
 
 void Vtop___024root___eval_ico(Vtop___024root* vlSelf) {

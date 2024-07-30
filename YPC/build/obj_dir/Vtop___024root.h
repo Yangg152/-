@@ -15,6 +15,7 @@ class Vtop___024root final : public VerilatedModule {
     // DESIGN SPECIFIC STATE
     VL_IN8(clk,0,0);
     VL_IN8(rst,0,0);
+    VL_OUT8(break_out,0,0);
     CData/*4:0*/ top__DOT__rd;
     CData/*4:0*/ top__DOT__rs1;
     CData/*4:0*/ top__DOT__rs2;

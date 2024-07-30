@@ -3,8 +3,11 @@ module top (
   input rst,
   input [31:0] inst,
   output reg [31:0] out,
-  output reg [31:0] pc // 添加一个输出端口
+  output reg [31:0] pc, 
+  output reg break_out
 );
+
+  import "DPI-C" function void top_break(input bit break_out);
 
   reg [31:0]  pc_n;
   Reg #(32, 32'h80000000) pc_reg (clk, rst, pc_n, pc, 1'b1);
@@ -32,7 +35,8 @@ module top (
     .rs2         (rs2),
     .opcode7     (opcode7),
     .opcode3     (opcode3),
-    .wen         (wen)
+    .wen         (wen),
+    .ebreak      (break_out)
   );
 
   wire [31:0]   wdata;
@@ -62,6 +66,10 @@ module top (
     .raddr(rs1),
     .rdata(regfile_out)
   );
+
+  always@(*) begin
+    top_break(break_out);
+  end
 
   
 endmodule

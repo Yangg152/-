@@ -9,5 +9,6 @@ module EXU #(DATA_WIDTH = 32) (
 );
 
   assign result = immI + rs1_value;
+
   
 endmodule
