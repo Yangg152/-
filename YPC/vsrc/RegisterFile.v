@@ -1,8 +1,9 @@
 module RegisterFile #(ADDR_WIDTH = 5, DATA_WIDTH = 32) (
   input clk,
+  input wen,
   input [DATA_WIDTH-1:0] wdata,
   input [ADDR_WIDTH-1:0] waddr,
-  input wen,
+  input [ADDR_WIDTH-1:0] raddr,
   output reg [DATA_WIDTH-1:0] rdata
 );
 
@@ -17,11 +18,9 @@ module RegisterFile #(ADDR_WIDTH = 5, DATA_WIDTH = 32) (
   end
 
   always @(posedge clk) begin
-    if (wen) begin
-      if (waddr != 0) // Check if address is not 0
-        rf[waddr] <= wdata;
-    end
-    rdata <= (waddr == 0) ? 32'h00000000 : rf[waddr]; // Output 0 for address 0
+    if (wen) rf[waddr] <= wdata;
   end
+
+ assign rdata = (raddr == 0) ? 32'h00000000 : rf[raddr]; // Output 0 for address 0
 
 endmodule

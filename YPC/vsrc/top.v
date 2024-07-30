@@ -5,36 +5,22 @@ module top (
   output reg [31:0] out,
   output reg [31:0] pc // 添加一个输出端口
 );
-  reg  [31:0]   pc_internal;
+
+  reg [31:0]  pc_n;
+  Reg #(32, 32'h80000000) pc_reg (clk, rst, pc_n, pc, 1'b1);
+  assign pc_n = (pc == 0) ? 32'h80000000 : pc + 4;
+
+  IFU ifu (
+    .clk         (clk),
+    .rst         (rst),
+    .pc          (pc),
+    .inst        ()
+  );
+
   wire [31:0]   imm;
-  wire [4:0]    rd, rs1;
+  wire [4:0]    rd, rs1, rs2;
   wire [6:0]    opcode7;
   wire [2:0]    opcode3;
-  wire [31:0]   wdata;
-  wire          wen;
-
-  // 将内部 pc 与外部 pc 同步
-  always @(posedge clk) begin
-    pc_internal <= pc;
-  end
-
-  always @(posedge clk) begin
-    if(rst) begin
-      pc_internal <= 32'h80000000;
-    end
-    else begin
-      pc_internal <= pc_internal + 4;
-    end
-  end
-
-  // 将内部 pc 输出到外部 pc
-  assign pc = pc_internal;
-
-  // IFU ifu (
-  //   .clk         (clk),
-  //   .rst         (rst),
-  //   .pc          (pc_n)
-  // );
 
   IDU idu (
     .clk         (clk),
@@ -43,20 +29,39 @@ module top (
     .imm         (imm),
     .rd          (rd),
     .rs1         (rs1),
-    .opcode7     (opcode7),
-    .opcode3     (opcode3)
-  );
-
-  EXU exu(
-    .clk         (clk),
-    .rst         (rst),
-    .immI        (imm),
-    .rd          (rd),
-    .rs1         (rs1),
+    .rs2         (rs2),
     .opcode7     (opcode7),
     .opcode3     (opcode3),
-    .wdata       (wdata),
     .wen         (wen)
   );
+
+  wire [31:0]   wdata;
+  wire          wen;
+  wire [31:0]   rs1_value, rs2_value, rd_value;
+  wire [31:0]   result; 
+
+  EXU exu(
+    .clk               (clk),
+    .rst               (rst),
+    .immI              (imm),
+    .opcode7           (opcode7),
+    .opcode3           (opcode3),
+    .rd_value          (rd_value),
+    .rs1_value         (regfile_out),
+    .rs2_value         (rs2_value),
+    .result            (result)    
+  );
+
+  wire [31:0]   regfile_out;
+  // 寄存器文件模块
+  RegisterFile regfile (
+    .clk(clk),
+    .wen(wen),
+    .wdata(result),
+    .waddr(rd),
+    .raddr(rs1),
+    .rdata(regfile_out)
+  );
+
   
 endmodule
